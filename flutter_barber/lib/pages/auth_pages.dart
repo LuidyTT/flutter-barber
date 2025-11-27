@@ -1,8 +1,10 @@
-// ignore_for_file: unused_import
+// ignore_for_file: unused_import, library_private_types_in_public_api, deprecated_member_use, avoid_print, unused_field, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter_barber/service/user_service.dart' show UserService;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_barber/pages/forgot_password_page.dart';
+import 'package:flutter_barber/pages/home_page.dart';
 import 'package:flutter_barber/widgets/button_widget.dart';
 
 class AuthPage extends StatefulWidget {
@@ -16,6 +18,7 @@ class _AuthPageState extends State<AuthPage> {
   bool checkedValue = false;
   bool register = true;
   bool pwVisible = false;
+  bool _isLoading = false;
 
   List<String> textfieldsStrings = ["", "", "", "", ""];
 
@@ -36,6 +39,35 @@ class _AuthPageState extends State<AuthPage> {
   final Color _hintColor = const Color(0xffA0AEC0);
   final Color _cardLight = Colors.white;
   final Color _cardDark = const Color(0xff2D3748);
+
+  // Na AuthPage, atualize a função _authenticate:
+  Future<void> _authenticate() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Simular delay de rede
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Salvar dados do usuário se for cadastro
+    if (register) {
+      await UserService.saveUserData(
+        firstName: textfieldsStrings[0], // First Name
+        lastName: textfieldsStrings[1], // Last Name
+        email: textfieldsStrings[2], // Email
+      );
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    // Navegar para a HomePage
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomePage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -367,31 +399,42 @@ class _AuthPageState extends State<AuthPage> {
             borderRadius: BorderRadius.circular(15),
           ),
           child: TextButton(
-            onPressed: () async {
-              if (register) {
-                if (_validateRegister()) {
-                  print('Register successful');
-                }
-              } else {
-                if (_validateLogin()) {
-                  print('Login successful');
-                }
-              }
-            },
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    if (register) {
+                      if (_validateRegister()) {
+                        await _authenticate();
+                      }
+                    } else {
+                      if (_validateLogin()) {
+                        await _authenticate();
+                      }
+                    }
+                  },
             style: TextButton.styleFrom(
               padding: EdgeInsets.symmetric(vertical: size.height * 0.02),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
               ),
             ),
-            child: Text(
-              register ? "Create Account" : "Sign In",
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: size.height * 0.018,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: _isLoading
+                ? SizedBox(
+                    height: size.height * 0.02,
+                    width: size.height * 0.02,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    register ? "Create Account" : "Sign In",
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: size.height * 0.018,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -419,7 +462,7 @@ class _AuthPageState extends State<AuthPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Login',
+                  'Barber',
                   style: GoogleFonts.poppins(
                     color: isDarkMode ? _textDark : _textLight,
                     fontSize: size.height * 0.024,
@@ -427,10 +470,10 @@ class _AuthPageState extends State<AuthPage> {
                   ),
                 ),
                 Text(
-                  '+',
+                  'Style',
                   style: GoogleFonts.poppins(
-                    color: _accentColor,
-                    fontSize: size.height * 0.03,
+                    color: _primaryColor,
+                    fontSize: size.height * 0.024,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
